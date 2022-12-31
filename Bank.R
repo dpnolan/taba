@@ -72,9 +72,9 @@ summary(y_factor)
 # no   yes 
 # 39922  5289 
 # 5289/(39922+5289)
-#  0.1169848 approx = 12%, as in the original study by Moro et al. 2014
+#  0.1169848 approx = 11.7%, similar to the original study by Moro et al. 2014
 # The classes are significantly imbalanced, 
-# so simply constantly predicting y='no' will be correct about 88% of the time
+# so simply constantly predicting y='no' will be correct about 88.3% of the time
 
 bank_clean<-cbind(bank_clean,y_factor)
 
@@ -269,18 +269,17 @@ ggplot(data=bank_clean,aes(x=y_factor, fill=poutcome_factor)) +
 #Model Fitting
 #####################
 
-
 glm.fits1<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
               + previous + job_factor + marital_factor + education_factor + default_factor 
               + housing_factor + loan_factor + contact_factor + poutcome_factor, 
               data=bank_clean, 
               family = binomial)
-
 summary(glm.fits1)
 
 # Null deviance: 32631  on 45210  degrees of freedom
 # Residual deviance: 21578  on 45170  degrees of freedom
 # AIC: 21660
+# Shows Wald statistics and the associated probability 
 # At 5% significance, two sided prob factor, NOT significant are 
 # age, previous, job=unknown or unemployed, marital=single, default=yes, 
 # contact=telephone or other, poutcome = unknown
@@ -297,6 +296,11 @@ exp(coef(glm.fits1))
 
 # Third-level educated (1.46), retired (1.29) and student (1.47) customers 
 # show favourable odds ratios
+
+# Diagnosis of the logistic regression
+summary(residuals(glm.fits1))
+plot(residuals(glm.fits1))
+
 
 #re-run including pdays in the regression
 glm.fits2<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
@@ -336,32 +340,71 @@ summary(glm_back)
 
 summary(y_factor)
 contrasts(y_factor)
-glm.probs<-predict(glm.fits,type='response')
+glm.probs<-predict(glm.fits1,type='response')
 glm.probs[1:10]
 length(glm.probs)         
 
 glm.pred<-rep("no",length(glm.probs))
-glm.pred[glm.probs > 0.50]= 'yes'
+glm.pred[glm.probs > 0.5]= 'yes'
+glm.pred[glm.probs > 0.117]= 'yes'
 glm.pred<-factor(glm.pred)
 summary(glm.pred)
 
 # Print out the statistics for the confusion matrix
 table(glm.pred, y_factor)
 
+# threshold = 0.5
+#             y_factor
+# glm.pred    no   yes
+# no        38937  3452
+# yes         985  1837
+# TPR = TP / (TP + FN ) = 1837/(1837+3452) 
+# =34.73% sensitivity
+# TNR = TN / (TN + FP) = 38937 / (38937 + 985) = 97.53%
+#
+# threshold = 0.117, matching the proportion of 'yes' in the dataset
+#             y_factor
+# glm.pred    no   yes
+# no        33597  905
+# yes       6325   4384
+# TPR = TP / (TP + FN ) = 43847/(4384+905) 
+# =82.9% sensitivity
+# TNR = TN / (TN + FP) = 33597 / (33597 + 6325) = 84.16%
+
+
 mean(glm.pred==y_factor)
 
 library(caret)
 library(e1071)
 pred_classf<-as.factor(glm.pred) 
-summary(pred_classf)
 
 cm<-confusionMatrix(y_factor,pred_classf,positive = "yes")
 cm
 attributes(cm)
 summary(y_factor)
 summary(pred_classf)
+sensitivity(pred_classf,y_factor,positive='yes')
+specificity(pred_classf,y_factor,negative='no')
+precision(pred_classf,y_factor,positive='yes')
+recall(pred_classf,y_factor,negative='no')
+
+install.packages('ROCR')
+library(ROCR)
+
+pred <- prediction(predictions = glm.probs,
+                   labels =y_factor)
+
+perf<-performance(pred, measure='tpr',x.measure='fpr')
+  
+plot(perf, main = "ROC curve for logistic regression sales classifier",
+     col = "red", lwd = 3)
+abline(a = 0, b = 1, lwd = 2, lty = 2)
+perf.auc <- performance(pred, measure = "auc")
+str(perf.auc)
+unlist(perf.auc@y.values)
 
 # Test the fitted model
+#################
 # H-L test
 install.packages('glmtoolbox')
 library(glmtoolbox)
@@ -400,179 +443,121 @@ PseudoR2(glm.fits1,which='all')
 # log likelihood = -10,789.17
 # null log likelihood = -16,315.48
 
+
+# Automated search of logistic regression parameters
+
 # Train/test split and cross-validation
 ###################################
 
-dim(bank_clean)
-# Calculate size of the test set 
-test_split=0.25
-test_records<-round(dim(bank_clean)[1] * test_split)
-test_records
-test_data<-sample(x=bank_clean,size=11000,replace=FALSE)
-head(test_data)
-
+# Create train and test datasets
 set.seed(1)
 #use 70% of dataset as training set and 30% as test set
 sample <- sample(c(TRUE, FALSE), size=nrow(bank_clean),replace=TRUE, prob=c(0.7,0.3))
 train  <- bank_clean[sample, ]
 test   <- bank_clean[!sample, ]
 
+glm.fits4<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
+               + previous + job_factor + marital_factor + education_factor + default_factor 
+               + housing_factor + loan_factor + contact_factor + poutcome_factor, 
+               data=train, 
+               family = binomial)
+summary(glm.fits4)
 
-install.packages("dplyr")  # Install dplyr package
-library("dplyr") 
-data_s2 <- sample_n(data, 3)    
-data_train<-sample_n(bank_clean,test_records)
-
-bank_clean[bank_clean[month_factor]=='dec']
-                          
-length(bank_clean[bank_clean['month_factor']=='dec'])
-length(bank_clean$age)
-
-train<-bank_clean[bank_clean['month_factor']=='dec']
-train<-(month_factor=='dec')
-
-install.packages('resample')
-library(resample)
-#minority<-bank_clean[bank_clean$y_factor=='y']
-#head(minority)
-#nrow(majority)
-#resample(minority,observed,R=majority.nrow())
-
-minority %>% group_by(y_factor) %>% sample_n(sample(n(), nrow(majority), replace=True)) %>% ungroup -> minority_resampled
-minority_resampled=slice_sample(minority,replace=TRUE,n=nrow(majority))
-
-nrow(minority_resampled)
-nrow(majority)
+performance_hosmer(glm.fits4, n_bins = 10)
+PseudoR2(glm.fits4,which='all')
 
 
+# Oversampling cases
+###################
 
-bank_clean %>% group_by(age,y_factor) %>%
-  summarise(percent_age=n()/nrow(bank_clean))->percent_age
+cases_yes<-bank_clean[bank_clean$y_factor=='yes',]
+summary(cases_yes)
+colnames(cases_yes)
+dim(cases_yes)[1]
 
-ggplot(bank_clean, aes(x = age,y=percent_age)) +
-  geom_histogram(binwidth=5)
+cases_no<-bank_clean[bank_clean$y_factor=='no',]
+summary(cases_no)
+dim(cases_no)[1]
 
-d2 <- 
-  bank_clean%>% 
-  group_by(age, y_factor) %>% 
-  summarise(count = n()) %>% 
-  mutate(perc = count/sum(count))
+case_differences<-( (dim(cases_no)[1])-(dim(cases_yes)[1]) )
+oversampled_cases<-slice_sample(cases_yes,n=case_differences,replace=TRUE)
 
-library(scale)
+cases_yes<-rbind(cases_oversampled,cases_yes)
+summary(cases_yes)
+cases<-rbind(cases_no,cases_yes)
 
-brks <- c(0, 0.25, 0.5, 0.75,1)
-ggplot(bank_clean, aes(x = age, fill=y_factor)) +
-  geom_bar(aes(y = (..count..)/sum(..count..))) + 
-  scale_y_continuous(labels=percent)+ 
-  facet_grid(y_factor ~ .)
+glm.fits5<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
+               + previous + job_factor + marital_factor + education_factor + default_factor 
+               + housing_factor + loan_factor + contact_factor + poutcome_factor, 
+               data=cases, 
+               family = binomial)
+summary(glm.fits5)
 
-p <- ggplot(mydataf, aes(x = foo)) +  
-  geom_bar(aes(y = (..count..)/sum(..count..))) + 
-  ## version 3.0.0
-  scale_y_continuous(labels=percent)
+glm.probs<-predict(glm.fits5,type='response')
+glm.probs[1:10]
+length(glm.probs)         
 
-ggplot(bank_clean, aes(x = age, fill=y_factor)) +
-  geom_histogram(binwidth=5) + 
-  facet_grid(y_factor ~ .)
+glm.pred<-rep("no",length(glm.probs))
+glm.pred[glm.probs > 0.5]= 'yes'
+#glm.pred[glm.probs > 0.117]= 'yes'
+glm.pred<-factor(glm.pred)
+summary(glm.pred)
 
-#Graph cases by month and Y
-ggplot(bank_clean,aes(x=month_factor,fill=y_factor)) + 
-  geom_bar()
+summary(y_factor)
+# 5289/(39922+5289) = 11.69848% 'yes' 
 
-explot<-ggplot(bank_clean,aes(x=job_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+# Print out the statistics for the confusion matrix
+table(glm.pred, cases$y_factor)
 
+32791 / (32791+7131)
+#sensitivity = 82.13767% 
 
-explot<-ggplot(bank_clean,aes(x=marital_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+38937 / (38937+6963)
+# specificity = 84.83% 
 
+# threshold = 0.5
+#             y_factor
+# glm.pred    no   yes
+# no        38937  3452
+# yes         985  1837
+# TPR = TP / (TP + FN ) = 1837/(1837+3452) 
+# =34.73% sensitivity
+# TNR = TN / (TN + FP) = 38937 / (38937 + 985) = 97.53%
+#
+# threshold = 0.117, matching the proportion of 'yes' in the dataset
+#             y_factor
+# glm.pred    no   yes
+# no        33597  905
+# yes       6325   4384
+# TPR = TP / (TP + FN ) = 43847/(4384+905) 
+# =82.9% sensitivity
+# TNR = TN / (TN + FP) = 33597 / (33597 + 6325) = 84.16%
 
-explot<-ggplot(bank_clean,aes(x=y_factor,fill=marital_factor)) + 
-  geom_bar()
-explot
+hltest(glm.fits5)
+# Statistic =  362017820 
+# degrees of freedom =  9 
+# p-value =  < 2.22e-16 
+# Still not significant for the fitted model overall
 
-explot<-ggplot(bank_clean,aes(x=default_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-# Source is Rhys (2020), section 4.2.3
-ggplot(data=bank_clean,aes(marital_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-# Show breakdown of marital_factor by 'yes' and 'no' population
-# Source is Rhys (2020), section 4.2.3
-ggplot(data=bank_clean,aes(x=y_factor, fill=marital_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(job_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-ggplot(data=bank_clean,aes(marital_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-ggplot(data=bank_clean,aes(education_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-ggplot(data=bank_clean,aes(default_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(housing_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(month_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(loan_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(contact_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
-
-ggplot(data=bank_clean,aes(poutcome_factor, fill = y_factor)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent)
+performance_hosmer(glm.fits5, n_bins = 10)
+# Chi-squared: 3794.805
+# df:   8    
+# p-value:   0.000
+# Summary: model does not fit well.
 
 
-ggplot(data=bank_clean,aes(x=y_factor),y= ) +
-  geom_violin() 
+# Nagelkerke pseudo R2
+NagelkerkeR2(glm.fits5)
+# $R2 = 0.5985811
 
+r2_nagelkerke(glm.fits5)
+# Nagelkerke's R2 
+# 0.5985811
 
-ggplot(bank_clean,aes(x, fill=y_factor ))
-
-explot<-ggplot(bank_clean,aes(x=housing_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-explot<-ggplot(bank_clean,aes(x=loan_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-explot<-ggplot(bank_clean,aes(x=contact_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-
-explot<-ggplot(bank_clean,aes(x=poutcome_factor,fill=y_factor)) + 
-  geom_bar()
-explot +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+PseudoR2(glm.fits5,which='CoxSnell') # 44.89%
+PseudoR2(glm.fits5,which='Nagelkerke') # 59.86%
+PseudoR2(glm.fits5,which='all')
+# AIC = 63,189.93
+# BIC = 63,570.73
+# log likelihood = -31,553.96
+# null log likelihood = -55,343.64
