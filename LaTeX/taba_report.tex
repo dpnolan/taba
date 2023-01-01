@@ -1,6 +1,8 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[9pt,technote]{IEEEtran}
+
 %\IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -24,7 +26,7 @@ A GitHub repository also holds the code and the analysis files, which can be dow
 
 Data was taken from the course Moodle site for both parts.  
 
-\section{Time Series Analysis}
+\section{Time Series Analysis for Understanding Irish Airport Departures Data}
 
 \begin{figure*}
     \centering
@@ -124,12 +126,12 @@ A third model without a damping parameter was also run, \textit{departs\_fit3}. 
 
 Forecasts were generated for 8 months past the end of the dataset.  The model \textit{departs\_fit1} with a damping parameter for the trend specified generated a range of forecasts of 746.3 to 2331.54 with a point forecast of 1538.9.  The model \textit{departs\_fit3} with the same setup except for no dampening, shows a higher point forecast 1904.69 and a wider range of 941.48 to 2867.9.  
 
-Running \textit{checkresiduals} on textit{departs\_fit1} shows a statistically significant autocorrelation of current against values with lag = 1.  The ACF, shown in figure \~ref{fig:ETS_residuals} also shows significant correlations around 23 and 24 months. A Box-Ljung test reinforces this by rejecting the null hypothesis of no autocorrelation with a p-value of 0.0001575.  A Jarque-Bera test rejects normality also, with a p-value near zero. 
+Running \textit{checkresiduals} on \textit{departs\_fit1} shows a statistically significant autocorrelation of current against values with lag of 1.  The ACF, shown in figure \~ref{fig:ETSresiduals} also shows significant correlations around 23 and 24 months. A Box-Ljung test reinforces this by rejecting the null hypothesis of no autocorrelation with a p-value of 0.0001575.  A Jarque-Bera test rejects normality also, with a p-value near zero. 
 
 \begin{figure}[htbp]
-\centerline{\includegraphics[scale=0.25]{ETS_residuals.png}}
+\centerline{\includegraphics[scale=0.25]{ETSresiduals.png}}
 \caption{Testing residuals from our ETS model}
-\label{fig:ETS_residuals}
+\label{fig:ETSresiduals}
 \end{figure}
 
 All this points to information not captured by the chosen model here still to be captured by some different models instead. 
@@ -178,6 +180,8 @@ Running a Ljung-Box test, the null hypothesis of independence among the residual
 
 \subsection{Simple Time Series Models}
 
+decomposition models
+
 \section{Applying a Forecasting Model}
 
 %\begin{figure}[htbp]
@@ -186,7 +190,160 @@ Running a Ljung-Box test, the null hypothesis of independence among the residual
 %\label{event1}
 %\end{figure}
 
-The percentile breakdown of Reddit polarity scores in table ~\ref{tab2} confirms the prevalence of neutral sentiment in the data set:
+\section{Logistic Regression for Analysing a Bank Marketing Campaign}
+
+In this section, I analyse a dataset estimated over several years from the records of a Portuguese bank of the characteristics of a population of consumers and their interactions with the bank.  I relate this data to the customers decision to purchase or not a bank product by estimating and testing a logistic regression model   
+
+\section{Understanding the Dataset}
+
+The dataset consists of records derived from the dataset used by Moro et al.\cite{moro14}.  The file provided, \textit{Bank.csv} provides 45,211 records each with observations of 17 variables which we can use to analyse the purchase decision.  
+
+Most of these variables are categorical variables, namely \textit{job, marital status, education, default , housing, loan, contact, previous outcome}.  Also included was \textit{y}, the outcome variable.  These have two or more discrete values, all known, with no numerical meaning or ranking among the different values: All these were converted using R to what it calls factor variables.  The numerical variables were not transformed.  All variables were imported into the dataframe \textit{bank}, which is not updated afterwards, and the cleaned and transformed values were added to the dataframe{bank\_clean}.  
+
+Below, I have graphed the variables, trying to display visually and by calculating some descriptive statistics, if we can detect any signficant difference between the values of these variables between the cases with 'yes' and 'no' outcomes.  Violin plots are used to summarise the the numerical variables across the 'yes' and 'no' populations.  Code was adapted for these from \cite{chang19} \S 6.8,6.9. 
+
+\subsection{Y} 
+
+The variable $y$ is a variable indicating, yes or no, whether the client has subscribed for the bank product.  This is the dependent variable that we would expect to be able to try to explain using the other independent variables in the dataset.  This binary variable was converted into the R factor variable \textit{y\_factor} with values 'yes' and 'no'.  
+
+One important fact to note immediately is that the observations are split into 39,922 'no' and 5,289 'yes' observations.  So, calculating 5289/(39922+5289)=  0.1169848, we see that approximately = 11.7\% of the observations are for 'yes' cases.  This is close to the 12.37\% rate of success in the original study\cite{moro14}.  As Moro et al. observe, this means that the dataset is unbalanced between the 'yes' and 'no' cases.  A naive estimator with no logic that just predicts 'no' in every case will still be correct about 88.3\% of the time.   This is not uncommon but requires adaptations in our model training and interpretation, described in detail in section~\ref{sec:imbalance} below.  
+
+\subsection{Age}
+
+In our violin plot in figure~\ref{fig:graph1age}, we see the distribution of the age variable in two separate buckets for 'yes' and 'no' customers.  The white dot shows the median.  The black area shows the box plot, with top and bottom edges at 75 and 25 percentile levels.  The results show some differences, with higher mean but lower median for 'yes' and significantly more skew and kurtosis for 'yes'.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph1age.png}}
+\caption{Age in yes and no observations}
+\label{fig:graph1age}
+\end{figure}
+
+\subsection{Balance}
+
+As shown in our violin plot in figure~\ref{fig:graph3balance}, the 'yes' population has bigger relationshiop balance, with mean 1804 v 1303 EUR and median 733 v 417 EUR. 'yes' population also has far fewer zero or very low balance values than 'no'.  
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph3balance.png}}
+\caption{Balance in yes and no observations}
+\label{fig:graph3balance}
+\end{figure}
+
+\section{Duration}
+
+As shown in figure~\ref{fig:graph4duration} for the duration of the previous contact with the bank, 'yes' has fewer short conversations, a mean 537 seconds (about 9 mins) v 221 (under 4 mins) for 'no', median value of 426 v 164 i.e. 7 minutes compared with 2.5
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph4duration.png}}
+\caption{Duration in yes and no observations}
+\label{fig:graph4duration}
+\end{figure}
+
+\section{Campaign}
+
+The 'yes' population has lower number of contacts during this campaign, mean - 2.14 v 2.85.  The distribution is shown in figure ~\ref{fig:graph5campaign}.
+
+\begin{figure}[htbp]
+%\centerline{\includegraphics[scale=0.25]{graph5campaign.png}}
+\centerline{\includegraphics[scale=0.25]{graph5and6.png}}
+\caption{Campaign in yes and no observations}
+\label{fig:graph5campaign}
+\end{figure}
+
+\subsection{Previous}
+
+The 'yes' population saw more contacts before this campaign, 1.17 v 0.5, but the median for both subsets is zero contacts before this campaign.  The graph is shown in figure~\ref{fig:graph6previous}.  
+
+%\begin{figure}[htbp]
+%\centerline{\includegraphics[scale=0.25]{graph6previous.png}}
+%\caption{Previous in yes and no observations}
+%\label{fig:graph6previous}
+%\end{figure}
+
+\subsection{Month and Day}
+
+Since the original dataset has observations from over five years of data, the date variables for the last contact offer the potential for finding seasonality in the data.  For the month, we might expect to see seasonal effects, with consumers spending most during summer holidays and the Christmas period, or spending on a new car typically in the first quarter, for education fees in August and September.  Any of these may lead to drawdowns of saving rather than new saving, so to 'no' in our caes here and lead instead to savings through the bank's offering at other times of the year.  The month was converted to a factor variable and retained for our model.  
+
+For the day of the month, there are many values for a calendar day from 1 to 31, which could make for a lot of extra categorical variables.  Also, these numbers may be for different days of the week in different months and years.  Without more date data, the day was considered as likely to be irrelevant and not brought into the modelling analysis.   
+
+The distributions of observations by month for both the 'yes' and the 'no' populations are shown in 
+figure~\ref{fig:graph7month}.  In the 'yes' population, Feb, Mar, Apr, Oct appear as a bigger proportion than in 'no'.  May is also much bigger in the 'no' population.  
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph7month.png}}
+\caption{Months in yes and no observations}
+\label{fig:graph7month}
+\end{figure}
+
+\subsection{Job}
+
+Figure~\ref{fig:graph8job} shows the breakdown of job categories by 'yes' and 'no' population.  We can notice that the 'yes' population has a lower proportion of blue-collar, more retired and some more students.   
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph8job.png}}
+%\caption{Job category in yes and no observations}
+\label{fig:graph8job}
+\end{figure}
+
+\subsection{Other Characteristics}
+
+Marital status, education, figure~\ref{fig:graph9and10}
+
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.15]{graph9and10.png}}
+%\caption{Job category in yes and no observations}
+\label{fig:graph9and10}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.15]{graph11and12.png}}
+%\caption{Job category in yes and no observations}
+\label{fig:graph11and12}
+\end{figure}
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.15]{graph13and14.png}}
+%\caption{Job category in yes and no observations}
+\label{fig:graph13and14}
+\end{figure}
+
+\section{Previous Outcome}
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.25]{graph15poutcome.png}}
+%\caption{Job category in yes and no observations}
+\label{fig:graph15poutcome}
+\end{figure}
+
+\subsection{Days since last contact}
+
+The variable \textit{pdays} records the number of days since last contact with the customer.  Most observations almost 37,000 are equal to -1.  I assumed that these represent no recorded values, so replaced these with NA instead, making this the only variable in the dataset with any NA values.  The other 8,257 observations positive integers.
+
+\subsection{Balance}
+Note that balance, which might usually mean a relationship balance, the total balance summing across all accounts and loan balances across the relationship with the bank, is in the dataset but not in the document.  As it is potentially useful, I include it in the analysis here as a numerical variable.  
+
+
+\subsection{Data Cleaning}
+
+After the categorical variables were converted into R factor variables, these were dropped from the dataset.  Day was dropped also.  
+
+\section{Building a Logistic Regression Model}
+
+Binary outcome - to buy or not buy
+
+\subsection{Stepwise Model Selection}
+
+Move in both directions - full model ends up as the best based on the AIC data 
+
+\section{Dealing with the Imbalanced Dataset}
+\label{sec:imbalance}
+
+\section{Applying the Model}
+
+Odds ratios may be most useful in targeting the customers
+
+\section{Example table} 
 
 \begin{table}[htbp]
 \caption{Reddit Posts: Polarity Percentiles }
