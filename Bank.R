@@ -1,6 +1,6 @@
 # Peter Nolan x22154116
 # 
-# Code for Terminal Assessment by Assignment (TABA)
+# Code  Terminal Assessment by Assignment (TABA)
 # 
 # Bank telemarketing analysis
 #
@@ -122,7 +122,6 @@ dev.off() # might be needed to clear the plot buffer
 # Code adapted from Chang, 2019, section 6.8 and 6.9
 # White dot shows the median
 # Black area shows a box plot with top and bottom edges at 75 and 25 percentile levels
-
 
 
 # Graph 1 - customer age in yes and no datasets
@@ -327,6 +326,52 @@ glm.all<-glm(y_factor ~ age + balance + month_factor + duration + campaign
               family = binomial)
 summary(glm.all)
 
+#  Coefficients:
+#  Estimate Std. Error z value Pr(>|z|)    
+#  (Intercept)               -3.560e+00  1.850e-01 -19.246  < 2e-16 ***
+#  age                        1.104e-04  2.203e-03   0.050 0.960033    
+#  balance                    1.291e-05  5.136e-06   2.513 0.011965 *  
+#  month_factorfeb            9.131e-01  1.221e-01   7.475 7.70e-14 ***
+#  month_factormar            2.719e+00  1.485e-01  18.319  < 2e-16 ***
+#  month_factorapr            1.174e+00  1.198e-01   9.802  < 2e-16 ***
+#  month_factormay            7.307e-01  1.165e-01   6.273 3.54e-10 ***
+#  month_factorjun            1.532e+00  1.262e-01  12.142  < 2e-16 ***
+#  month_factorjul            3.400e-01  1.178e-01   2.886 0.003896 ** 
+#  month_factoraug            4.394e-01  1.170e-01   3.757 0.000172 ***
+#  month_factorsep            1.982e+00  1.472e-01  13.459  < 2e-16 ***
+#  month_factoroct            2.053e+00  1.393e-01  14.738  < 2e-16 ***
+#  month_factornov            3.034e-01  1.228e-01   2.471 0.013477 *  
+#  month_factordec            1.821e+00  1.966e-01   9.261  < 2e-16 ***
+#  duration                   4.186e-03  6.450e-05  64.889  < 2e-16 ***
+#  campaign                  -8.520e-02  1.001e-02  -8.510  < 2e-16 ***
+#  previous                   9.694e-03  6.424e-03   1.509 0.131316    
+#  job_factorblue-collar     -3.138e-01  7.260e-02  -4.322 1.55e-05 ***
+#  job_factorentrepreneur    -3.627e-01  1.255e-01  -2.889 0.003863 ** 
+#  job_factorhousemaid       -4.994e-01  1.364e-01  -3.663 0.000250 ***
+#  job_factormanagement      -1.641e-01  7.326e-02  -2.240 0.025076 *  
+#  job_factorretired          2.554e-01  9.708e-02   2.631 0.008521 ** 
+#  job_factorself-employed   -2.961e-01  1.119e-01  -2.645 0.008159 ** 
+#  job_factorservices        -2.259e-01  8.399e-02  -2.689 0.007162 ** 
+#  job_factorstudent          3.846e-01  1.088e-01   3.536 0.000407 ***
+#  job_factortechnician      -1.713e-01  6.887e-02  -2.487 0.012892 *  
+#  job_factorunemployed      -1.771e-01  1.117e-01  -1.585 0.112881    
+#  job_factorunknown         -3.271e-01  2.333e-01  -1.402 0.160872    
+#  marital_factormarried     -1.797e-01  5.889e-02  -3.051 0.002277 ** 
+#  marital_factorsingle       9.270e-02  6.723e-02   1.379 0.167962    
+#  education_factortertiary   3.808e-01  7.524e-02   5.061 4.18e-07 ***
+#  education_factorsecondary  1.816e-01  6.473e-02   2.805 0.005033 ** 
+#  education_factorunknown    2.524e-01  1.038e-01   2.431 0.015046 *  
+#  default_factoryes         -1.372e-02  1.627e-01  -0.084 0.932812    
+#  housing_factoryes         -6.877e-01  4.365e-02 -15.757  < 2e-16 ***
+#  loan_factoryes            -4.305e-01  5.998e-02  -7.176 7.16e-13 ***
+#  contact_factortelephone   -1.657e-01  7.517e-02  -2.205 0.027478 *  
+#  contact_factorunknown     -1.588e+00  7.247e-02 -21.911  < 2e-16 ***
+#  poutcome_factorother       2.115e-01  8.959e-02   2.361 0.018246 *  
+#  poutcome_factorsuccess     2.299e+00  7.969e-02  28.855  < 2e-16 ***
+#  poutcome_factorunknown    -6.150e-02  6.042e-02  -1.018 0.308737    
+#
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
 # Null deviance: 32631  on 45210  degrees of freedom
 # Residual deviance: 21578  on 45170  degrees of freedom
 # AIC: 21660
@@ -352,46 +397,47 @@ exp(coef(glm.all))
 summary(residuals(glm.all))
 plot(residuals(glm.all))
 
-colnames(bank_clean)
-#re-run including pdays in the regression
+#################
+# Test the fitted model with Pseudo R2 measures
+#################
+# H-L test
+install.packages('glmtoolbox')
+library(glmtoolbox)
+hltest(glm.all)
+# Statistic =  517.1731 
+# degrees of freedom =  8 
+# p-value =  < 2.22e-16 
 
-#add back p_days into the data
-bank_clean<-cbind(bank_clean,pdays)
-colnames(bank_clean)
-glm.all2<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
-               + previous + job_factor + marital_factor + education_factor + default_factor 
-               + housing_factor + loan_factor + contact_factor + poutcome_factor
-               +pdays, 
-               data=bank_clean,
-               family = binomial)
+install.packages('performance')
+library(performance)
+performance_hosmer(glm.all, n_bins = 10)
+# Chi-squared: 518.110
+# df:   8    
+# p-value:   0.000
+# Summary: model does not fit well.
 
-summary(glm.all2)
-# Null deviance: 8919.8  on 8256  degrees of freedom
-# Residual deviance: 5809.6  on 8215  degrees of freedom
-# (36954 observations deleted due to missingness)
-# AIC: 5893.6
-# 
-# Most observations are deleted because 36,000 NAs in pdays field
-# AIC and deviance are  much lower
-# pdays is nowhere near significance in this regression
-# Many other variables drop out also
 
-# Let's drop pdays variable as insignificant
-bank_clean<-select(bank_clean,-pdays)
-colnames(bank_clean)
+# Nagelkerke pseudo R2
+install.packages('fmsb')
+library(fmsb)
+NagelkerkeR2(glm.all)
+# $R2=0.4218619
 
-glm.reduced<-glm(y_factor ~balance + month_factor + duration + campaign 
-                + job_factor + marital_factor + education_factor +
-               + housing_factor + loan_factor + contact_factor + poutcome_factor, 
-               data=bank_clean,
-               family = binomial)
-# age, previous, pdays, default are excluded
+r2_nagelkerke(glm.all)
+# Nagelkerke's R2 
+# 0.4218619
 
-summary(glm.reduced)
+install.packages('DescTools')
+library('DescTools')
+PseudoR2(glm.all,which='CoxSnell') #21.687%
+PseudoR2(glm.all,which='Nagelkerke') #42.19%
 
-# Null deviance: 32631  on 45210  degrees of freedom
-# Residual deviance: 23046  on 45194  degrees of freedom
-# AIC: 23080, much worse than with glm.all
+PseudoR2(glm.all,which='all')
+# AIC=21,660.35
+# BIC=22,017.83
+# log likelihood = -10,789.17
+# null log likelihood = -16,315.48
+
 
 performance_hosmer(glm.reduced, n_bins = 10)
 # Hosmer-Lemeshow Goodness-of-Fit Test
@@ -403,6 +449,55 @@ performance_hosmer(glm.reduced, n_bins = 10)
 # Summary: model does not fit well.
 #
 # H-L statistics still do not fit well
+
+
+#################
+# Test the fitted model with pdays added back
+#################
+
+colnames(bank_clean)
+#re-run including pdays in the regression
+
+#add back p_days into the data
+bank_clean<-cbind(bank_clean,pdays)
+colnames(bank_clean)
+glm.all2<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
+              + previous + job_factor + marital_factor + education_factor + default_factor 
+              + housing_factor + loan_factor + contact_factor + poutcome_factor
+              +pdays, 
+              data=bank_clean,
+              family = binomial)
+summary(glm.all2)
+
+# Coefficient, standard error, Z, probability score 
+#  pdays                      4.497e-04  3.121e-04   1.441 0.149536   
+# Many other variables drop out also
+
+
+# Null deviance: 8919.8  on 8256  degrees of freedom
+# Residual deviance: 5809.6  on 8215  degrees of freedom
+# (36954 observations deleted due to missingness)
+# AIC: 5893.6
+# Most observations are deleted because 36,000 NAs in pdays field
+# AIC and deviance are  much lower
+# pdays is nowhere near significance in this regression
+
+# Let's drop pdays variable as insignificant
+bank_clean<-select(bank_clean,-pdays)
+colnames(bank_clean)
+
+glm.reduced<-glm(y_factor ~balance + month_factor + duration + campaign 
+                 + job_factor + marital_factor + education_factor +
+                   + housing_factor + loan_factor + contact_factor + poutcome_factor, 
+                 data=bank_clean,
+                 family = binomial)
+# age, previous, pdays, default are excluded
+
+summary(glm.reduced)
+
+# Null deviance: 32631  on 45210  degrees of freedom
+# Residual deviance: 23046  on 45194  degrees of freedom
+# AIC: 23080, much worse than with glm.all
 
 # User-selected variables, those that I identified in the graphical analysis as possibly 
 # significantly different between 'yes' and 'no' customers? 
@@ -436,12 +531,6 @@ performance_hosmer(glm.user, n_bins = 10)
 null_model<-glm(y_factor~1,data=independent_variables,family=binomial)
 full_model<-glm(y_factor~. , data=independent_variables,family=binomial)
 
-glm.fits3<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
-               + previous + job_factor + marital_factor + education_factor + default_factor 
-               + housing_factor + loan_factor + contact_factor + poutcome_factor,
-               data=bank_clean,
-               family = binomial)
-
 library(MASS)
 
 glm_step_AIC <- stepAIC(full_model,trace = TRUE, direction= "both")
@@ -456,6 +545,9 @@ step_model <- step(null_model,
 summary(step_model)
 plot(step_model)
 
+y_factor ~ duration + poutcome_factor + month_factor + contact_factor + 
+  housing_factor + job_factor + campaign + loan_factor + marital_factor + 
+  education_factor + balance + previous
 
 ####################
 # Section 6 - Classification
@@ -633,48 +725,8 @@ str(perf.auc)
 unlist(perf.auc@y.values)
 # So, calculated AUC is around 90.8%, 
 
-# Test the fitted model
-#################
-# H-L test
-install.packages('glmtoolbox')
-library(glmtoolbox)
-hltest(glm.all)
-# Statistic =  517.1731 
-# degrees of freedom =  8 
-# p-value =  < 2.22e-16 
-
-install.packages('performance')
-library(performance)
-performance_hosmer(glm.all, n_bins = 10)
-# Chi-squared: 518.110
-# df:   8    
-# p-value:   0.000
-# Summary: model does not fit well.
-
-
-# Nagelkerke pseudo R2
-install.packages('fmsb')
-library(fmsb)
-NagelkerkeR2(glm.all)
-# $R2=0.4218619
-
-r2_nagelkerke(glm.all)
-# Nagelkerke's R2 
-# 0.4218619
-      
-install.packages('DescTools')
-library('DescTools')
-PseudoR2(glm.all,which='CoxSnell') #21.687%
-PseudoR2(glm.all,which='Nagelkerke') #42.19%
-
-PseudoR2(glm.all,which='all')
-# AIC=21,660.35
-# BIC=22,017.83
-# log likelihood = -10,789.17
-# null log likelihood = -16,315.48
-
 ###################################
-# Section 8 - Train/test split and cross-validation
+# Section 8 - Train/test split
 ###################################
 
 # Create train and test datasets
@@ -722,13 +774,12 @@ performance_hosmer(glm.train, n_bins = 10)
 PseudoR2(glm.train,which='all')
 
 ####################
-# Section 9 - Oversampling cases
+# Section 9 - Oversampling the 'yes' cases
 ###################
 # This is another method for classification in imbalanced data sets 
 # recommended by Branco et al. (2017), namely oversample the under-represented class.  
-# Here I resample the 'yes' customers to generate the same observations as the 
-# 'no' customers 
-
+# Here I resample the 'yes' customers, adding simple duplicates to the dataset 
+# to generate the same observations as the 'no' customers 
 
 cases_yes<-bank_clean[bank_clean$y_factor=='yes',]
 summary(cases_yes)
@@ -810,3 +861,107 @@ PseudoR2(glm.fits5,which='all')
 # BIC = 63,570.73
 # log likelihood = -31,553.96
 # null log likelihood = -55,343.64
+
+####################
+# Section 10 Individual variable regressions against y
+###################
+
+glm.single<-glm(y_factor ~ age,
+                data=bank_clean, 
+                family = binomial)
+summary(glm.single)
+#Estimate Std. Error z value Pr(>|z|)    
+#(Intercept) -2.319506   0.058083 -39.934   < 2e-16 ***
+#  age        0.007229   0.001352   5.346    8.98e-08 ***
+
+PseudoR2(glm.single,which='all')
+#Nagelkerke
+#1.214439e-03
+#Cox Snell 
+#6.243408e-04 
+
+performance_hosmer(glm.single, n_bins = 10)
+
+# Hosmer-Lemeshow Goodness-of-Fit Test
+#
+# Chi-squared: 614.722
+# df:   8    
+# p-value:   0.000
+# Summary: model does not fit well.
+
+
+glm.single<-glm(y_factor ~ job_factor,
+                data=bank_clean, 
+                family = binomial)
+summary(glm.single)
+#Estimate Std. Error z value Pr(>|z|)    
+#(Intercept) -2.319506   0.058083 -39.934   < 2e-16 ***
+#  age        0.007229   0.001352   5.346    8.98e-08 ***
+
+PseudoR2(glm.single,which='all')
+#Nagelkerke
+#3.188e-02
+#Cox Snell 
+#1.639e-02 
+
+performance_hosmer(glm.single, n_bins = 10)
+# 'breaks' are not unique
+
+glm.single<-glm(y_factor ~ marital_factor,
+                data=bank_clean, 
+                family = binomial)
+summary(glm.single)
+performance_hosmer(glm.single, n_bins = 10)
+
+install.packages('rms')
+library(rms)
+model_lrm<-lrm(y_factor~job_factor,bank_clean, method='lrm.fit', model = TRUE, x=TRUE, y=TRUE,
+               linear.predictors=TRUE, se.fit=FALSE)
+
+model_lrm_all<-lrm(y_factor~age + balance + month_factor + duration + campaign 
+               + previous + job_factor + marital_factor + education_factor + default_factor 
+               + housing_factor + loan_factor + contact_factor + poutcome_factor,
+               bank_clean, method='lrm.fit', model = TRUE, x=TRUE, y=TRUE,
+               linear.predictors=TRUE, se.fit=FALSE)
+
+model_lrm_all
+
+# Pr(> chi2)  <0.0001 
+
+#################
+# Section 11 - cross validation
+#################
+
+library(caret)
+# https://cran.r-project.org/web/packages/caret/caret.pdf
+# https://topepo.github.io/caret/index.html
+# Code example adapted from https://daviddalpiaz.github.io/r4sl/the-caret-package.html
+# James et al. (2021), section 4.7.2
+
+#set a seed so that results can be re-run 
+set.seed(1)
+#specify the cross-validation method
+ctrl <- trainControl(method = "cv", number = 5)
+
+#fit a logistic regression model and use k-fold CV to evaluate performance
+model <- train(y_factor~ age + balance + month_factor + duration + campaign 
+               + previous + job_factor + marital_factor + education_factor + default_factor 
+               + housing_factor + loan_factor + contact_factor + poutcome_factor,
+               data=bank_clean,
+               method='glm',
+               family='binomial',
+               trControl = ctrl)
+print(model)  
+model$results 
+
+# Null deviance: 32631  on 45210  degrees of freedom
+# Residual deviance: 21578  on 45170  degrees of freedom
+# AIC: 21660
+
+# Coefficients on the k-fold results exactly match the sign and size on the the glm.all model above, 
+# thus validating the estimates for glm.all
+# This would likely make us happier to accept the glm.all model as a useful estimator
+# 
+# Note, however, that there is no agreement and implementation on a method to estimate 
+# degrees of freedom and t and F tests for cross validation estimates
+# This method belongs more to the world of machine learning

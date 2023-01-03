@@ -198,15 +198,23 @@ In this section, I analyse a dataset estimated over several years from the recor
 
 The dataset consists of records derived from the dataset used by Moro et al.\cite{moro14}.  The file provided, \textit{Bank.csv} provides 45,211 records each with observations of 17 variables which we can use to analyse the purchase decision.  
 
-Most of these variables are categorical variables, namely \textit{job, marital status, education, default , housing, loan, contact, previous outcome}.  Also included was \textit{y}, the outcome variable.  These have two or more discrete values, all known, with no numerical meaning or ranking among the different values: All these were converted using R to what it calls factor variables.  The numerical variables were not transformed.  All variables were imported into the dataframe \textit{bank}, which is not updated afterwards, and the cleaned and transformed values were added to the dataframe{bank\_clean}.  
+Most of these variables are categorical variables, namely \textit{job, marital status, education, default, housing, loan, contact, month, previous outcome}.  Also categorical is\textit{y}, the outcome variable.  These have two or more discrete values, all known, with no numerical meaning or ranking among the different values: All these were converted in \textit{R} to what it calls factor variables.  After the categorical variables were converted into R factor variables and added to the dataset, these were dropped from the dataset.  Day was dropped also.  
 
-Below, I have graphed the variables, trying to display visually and by calculating some descriptive statistics, if we can detect any signficant difference between the values of these variables between the cases with 'yes' and 'no' outcomes.  Violin plots are used to summarise the the numerical variables across the 'yes' and 'no' populations.  Code was adapted for these from \cite{chang19} \S 6.8,6.9. 
+The numerical variables namely \textit{age, balance, duration, campaign, pdays, previous} were not transformed for this initial analysis, partly to keep them in their more intuitive original form for easier communication, but also because outliers seem comparatively rare.  
+
+All variables were imported into the dataframe \textit{bank}, which is not updated afterwards, and the cleaned and transformed values were added to the dataframe \textit{bank\_clean}, which includes \textit{y} that will be our dependent variable, which is dropped from the othewise identical dataframe \textit{independent\_variables}.  
+
+Below, I show some graphs and descriptive statistics for the variables in the dataset. The full set are available in the \textit{R} code.  Here, as in \cite{hastie21} figure 4.3, the intention is display visually any signficant difference between the values of these variables between the cases with 'yes' and 'no' outcomes which we can expect to be useful in our model.  Violin plots are used to summarise the the numerical variables across the 'yes' and 'no' populations.  Bar charts show the proportions for the other, categorical variables in the 'yes' and 'no' populations.  Code was adapted for the graphs from \cite{chang19} section 6.8 \& 6.9. 
 
 \subsection{Y} 
 
-The variable $y$ is a variable indicating, yes or no, whether the client has subscribed for the bank product.  This is the dependent variable that we would expect to be able to try to explain using the other independent variables in the dataset.  This binary variable was converted into the R factor variable \textit{y\_factor} with values 'yes' and 'no'.  
+\textit{Y} is a categorical variable showing, yes or no, whether the client has subscribed for the deposit product the bank has offered.  This is the dependent variable that we would expect to be able to try to explain using the other independent variables in the dataset.  This binary variable was converted into the R factor variable \textit{y\_factor} with values 'yes' and 'no'.  
 
 One important fact to note immediately is that the observations are split into 39,922 'no' and 5,289 'yes' observations.  So, calculating 5289/(39922+5289)=  0.1169848, we see that approximately = 11.7\% of the observations are for 'yes' cases.  This is close to the 12.37\% rate of success in the original study\cite{moro14}.  As Moro et al. observe, this means that the dataset is unbalanced between the 'yes' and 'no' cases.  A naive estimator with no logic that just predicts 'no' in every case will still be correct about 88.3\% of the time.   This is not uncommon but requires adaptations in our model training and interpretation, described in detail in section~\ref{sec:imbalance} below.  
+
+\subsection{Days Since Last Contact}
+
+The variable \textit{pdays} records the number of days since last contact with the customer.  Most observations almost 37,000 are equal to -1.  I assumed that these represent no recorded values, so replaced these with NA instead, making this the only variable in the dataset with any NA values.  The other 8,257 observations are positive integers.  
 
 \subsection{Age}
 
@@ -220,7 +228,7 @@ In our violin plot in figure~\ref{fig:graph1age}, we see the distribution of the
 
 \subsection{Balance}
 
-As shown in our violin plot in figure~\ref{fig:graph3balance}, the 'yes' population has bigger relationshiop balance, with mean 1804 v 1303 EUR and median 733 v 417 EUR. 'yes' population also has far fewer zero or very low balance values than 'no'.  
+Note that balance, which might usually mean a relationship balance, the total balance summing across all accounts and loan balances across the relationship with the bank, is in the dataset but not in the document.  As it is potentially useful, I include it in the analysis here as a numerical variable.  As shown in our violin plot in figure~\ref{fig:graph3balance}, the 'yes' population has bigger relationshiop balance, with mean 1804 v 1303 EUR and median 733 v 417 EUR. 'yes' population also has far fewer zero or very low balance values than 'no'.  
 
 \begin{figure}[htbp]
 \centerline{\includegraphics[scale=0.25]{graph3balance.png}}
@@ -228,9 +236,9 @@ As shown in our violin plot in figure~\ref{fig:graph3balance}, the 'yes' populat
 \label{fig:graph3balance}
 \end{figure}
 
-\section{Duration}
+\subsection{Duration}
 
-As shown in figure~\ref{fig:graph4duration} for the duration of the previous contact with the bank, 'yes' has fewer short conversations, a mean 537 seconds (about 9 mins) v 221 (under 4 mins) for 'no', median value of 426 v 164 i.e. 7 minutes compared with 2.5
+Figure~\ref{fig:graph4duration} shows the duration of the previous contact with the bank; 'yes' has fewer short conversations, a mean 537 seconds (about 9 mins) v 221 (under 4 mins) for 'no', median value of 426 v 164 i.e. 7 minutes compared with 2.5 minutes.  
 
 \begin{figure}[htbp]
 \centerline{\includegraphics[scale=0.25]{graph4duration.png}}
@@ -238,35 +246,33 @@ As shown in figure~\ref{fig:graph4duration} for the duration of the previous con
 \label{fig:graph4duration}
 \end{figure}
 
-\section{Campaign}
+\subsection{Campaign}
 
-The 'yes' population has lower number of contacts during this campaign, mean - 2.14 v 2.85.  The distribution is shown in figure ~\ref{fig:graph5campaign}.
+The 'yes' population has lower number of contacts made by the bank during this campaign, mean - 2.14 v 2.85.  The distribution is shown in figure ~\ref{fig:graph5campaign}.
 
 \begin{figure}[htbp]
 %\centerline{\includegraphics[scale=0.25]{graph5campaign.png}}
-\centerline{\includegraphics[scale=0.25]{graph5and6.png}}
+\centerline{\includegraphics[scale=0.2]{graph5campaign.png}}
 \caption{Campaign in yes and no observations}
 \label{fig:graph5campaign}
 \end{figure}
 
 \subsection{Previous}
 
-The 'yes' population saw more contacts before this campaign, 1.17 v 0.5, but the median for both subsets is zero contacts before this campaign.  The graph is shown in figure~\ref{fig:graph6previous}.  
+The 'yes' population saw more contacts before this campaign, 1.17 v 0.5, but the median for both subsets is zero contacts before this campaign, so this variable may not have much predictive power. The graph is shown in figure~\ref{fig:graph6previous}.  
 
-%\begin{figure}[htbp]
-%\centerline{\includegraphics[scale=0.25]{graph6previous.png}}
-%\caption{Previous in yes and no observations}
-%\label{fig:graph6previous}
-%\end{figure}
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.2]{graph6previous.png}}
+\caption{Previous in yes and no observations}
+\label{fig:graph6previous}
+\end{figure}
 
 \subsection{Month and Day}
 
-Since the original dataset has observations from over five years of data, the date variables for the last contact offer the potential for finding seasonality in the data.  For the month, we might expect to see seasonal effects, with consumers spending most during summer holidays and the Christmas period, or spending on a new car typically in the first quarter, for education fees in August and September.  Any of these may lead to drawdowns of saving rather than new saving, so to 'no' in our caes here and lead instead to savings through the bank's offering at other times of the year.  The month was converted to a factor variable and retained for our model.  
-
-For the day of the month, there are many values for a calendar day from 1 to 31, which could make for a lot of extra categorical variables.  Also, these numbers may be for different days of the week in different months and years.  Without more date data, the day was considered as likely to be irrelevant and not brought into the modelling analysis.   
+Since the original dataset has observations from over five years of data 2008--2013, the date variables for the last contact offer the potential for finding seasonality in the data.  For the month, we might expect to see seasonal effects, with consumers spending most during summer holidays and the Christmas period.   These periods may be drawdowns of saving rather than new saving, so to 'no' in our caes here and lead instead to savings through the bank's offering at other times of the year.  The month was converted to a factor variable and retained for our model.  
 
 The distributions of observations by month for both the 'yes' and the 'no' populations are shown in 
-figure~\ref{fig:graph7month}.  In the 'yes' population, Feb, Mar, Apr, Oct appear as a bigger proportion than in 'no'.  May is also much bigger in the 'no' population.  
+figure~\ref{fig:graph7month}.  In the 'yes' population, Feb, Mar, Apr, Oct appear as a bigger proportion than in 'no'.  May is also much bigger in the 'no' population.  This points to predictive power in the month variables.  
 
 \begin{figure}[htbp]
 \centerline{\includegraphics[scale=0.25]{graph7month.png}}
@@ -274,77 +280,120 @@ figure~\ref{fig:graph7month}.  In the 'yes' population, Feb, Mar, Apr, Oct appea
 \label{fig:graph7month}
 \end{figure}
 
+For the day of the month, there are many values for a calendar day from 1 to 31, which could make for a lot of extra categorical variables.  Also, these numbers may be for different days of the week in different months and years.  Without more date data, the day was considered as likely to be irrelevant and not brought into the model.   
+
 \subsection{Job}
 
-Figure~\ref{fig:graph8job} shows the breakdown of job categories by 'yes' and 'no' population.  We can notice that the 'yes' population has a lower proportion of blue-collar, more retired and some more students.   
+Figure~\ref{fig:graph8job} shows the breakdown of job categories by 'yes' and 'no' population.  We can notice that the 'yes' population has a lower proportion of blue-collar, more retirees and some more students.   
 
 \begin{figure}[htbp]
 \centerline{\includegraphics[scale=0.25]{graph8job.png}}
-%\caption{Job category in yes and no observations}
+\caption{Job category in yes and no observations}
 \label{fig:graph8job}
 \end{figure}
 
 \subsection{Other Characteristics}
 
-Marital status, education, figure~\ref{fig:graph9and10}
-
+More people who are single and have third-level education appear to have subscribed in the past, shown in figure~\ref{fig:graph9and10}.  
 
 \begin{figure}[htbp]
-\centerline{\includegraphics[scale=0.15]{graph9and10.png}}
-%\caption{Job category in yes and no observations}
+\centerline{\includegraphics[scale=0.25]{graph9and10.png}}
+\caption{Marital status and education in yes and no observations}
 \label{fig:graph9and10}
 \end{figure}
 
+The default variable was assumed to be an indicator of a past credit default event by the customer.  It seems to account for very few observations, but at a lower proportion among the 'yes' population.  
+
+Many fewer people with mortgages appear to have subscribed in the past (figure~\ref{fig:graph11and12}).  They may be directing surplus cash to paying down the housing debt rather than extra deposit accounts.  
 
 \begin{figure}[htbp]
-\centerline{\includegraphics[scale=0.15]{graph11and12.png}}
-%\caption{Job category in yes and no observations}
+\centerline{\includegraphics[scale=0.25]{graph11and12.png}}
+\caption{Has a past default event and has mortgage in yes and no observations}
 \label{fig:graph11and12}
 \end{figure}
 
 \begin{figure}[htbp]
-\centerline{\includegraphics[scale=0.15]{graph13and14.png}}
-%\caption{Job category in yes and no observations}
+\centerline{\includegraphics[scale=0.25]{graph13and14.png}}
+\caption{Has personal loan and contact method in yes and no observations}
 \label{fig:graph13and14}
 \end{figure}
 
-\section{Previous Outcome}
+Previous outcomes, the customer having responded favourably ('success') to past marketing campaigns shows a visible difference between the 'no' and 'yes' populations in figure~\ref{fig:graph15poutcome}.  This may be a promising variable for use in prediction.  
 
 \begin{figure}[htbp]
 \centerline{\includegraphics[scale=0.25]{graph15poutcome.png}}
-%\caption{Job category in yes and no observations}
+\caption{Previous decision to buy in yes and no observations}
 \label{fig:graph15poutcome}
 \end{figure}
 
-\subsection{Days since last contact}
-
-The variable \textit{pdays} records the number of days since last contact with the customer.  Most observations almost 37,000 are equal to -1.  I assumed that these represent no recorded values, so replaced these with NA instead, making this the only variable in the dataset with any NA values.  The other 8,257 observations positive integers.
-
-\subsection{Balance}
-Note that balance, which might usually mean a relationship balance, the total balance summing across all accounts and loan balances across the relationship with the bank, is in the dataset but not in the document.  As it is potentially useful, I include it in the analysis here as a numerical variable.  
-
-
-\subsection{Data Cleaning}
-
-After the categorical variables were converted into R factor variables, these were dropped from the dataset.  Day was dropped also.  
-
 \section{Building a Logistic Regression Model}
 
-Binary outcome - to buy or not buy
+The objective of our modelling is estimate a binary logistic regression model to predict, using variable observations in the record, the decision to subscribe (\textit{y}) or not to the deposit product.  
 
-\subsection{Stepwise Model Selection}
+Without detailed date data, this is a cross-sectional analysis with a focus on explanation rather than a time-series model.  The objective is also, unlike in our time-series models above, a numerical forecast, but rather a classification analysis, forecasting the binary outcome - to buy or not buy, 'yes' or 'no'.  
 
-Move in both directions - full model ends up as the best based on the AIC data 
+Above, I have argued for including 16 of the 17 likely independent variables available, dropping 'Date' only.  As a first pass model, I also wish to avoid any dimension reduction techniques for now, so as to cover the full spectrum of available and potentially useful variables in full detail.  As this is a first exploration and as there is no theoretical model we are estimating, focusing on parsimony in the model risks dropping valuable information before it is understood: The modelling process is as useful in the long term as a learning process for the modeller as it is a rigorous proof.  Neither can the nine factor variables be easily included in this.  
 
-\section{Dealing with the Imbalanced Dataset}
-\label{sec:imbalance}
+\subsection{Estimating the Full Model}
 
-\section{Applying the Model}
+To begin with, a logistic regression model named \textit{glm.all} was estimated in \textit{R}, following the process in James et al. \cite{hastie21} \S 4.7.2.  This used  all the candidate variables but for the \textit{pdays} in the dataset.  
+
+The linear regression model assumes a linear relationship between the probability of the dependent variable and the values of the independent variables i.e.
+\begin{equation}
+P(Y_i) = \frac{1}{\beta_0 + \beta_1 X_1 + \dots +\beta_n X_n}
+\end{equation}
+
+Using maximum liklihood (ML) estimation, we chose the values of the $\beta_i$ that fit most closely with the observed data, minimising the log-likelihood function.  Deviance is calculated as $-2 \ times log-likelihood$
+Null deviance on estimating \textit{glm.all} was 32631 on 45210  degrees of freedom, compared with the residual deviance, that remaining unexplained portion after estimating our model, was 21,578 on 45170 degrees of freedom.  An AIC statistic of of 21,660 was returned.  
+
+The model output Wald statistics and associated probabilities for the 42 coefficient estimates show that, at a 5\% two-sided level of significance, all the variables were assessed as significant except for 7, namely \textit{age} and \textit{previous}, the categories \textit{job} as \textit{unknown} or \textit{unemployed}, \textit{marital} equal to \textit{single} and \textit{default} as \textit{yes}, \textit{contact} as \textit{telephone} or \textit{other}, or \textit{poutcome} equals \textit{unknown}. 
+
+Among the estimated coefficients $\beta_i$, for \textit{glm.all}, the most important for users are the large, positive and statistically significant values, such as for $poutcome=success$ of 2.299.  
+
+The log odds are calculated as 
+\begin{equation}
+log\left(\frac{p(X)}{1-p(X)}\right) = \beta_0 + \beta_1 X_1 + \dots +\beta_n X_n
+\end{equation}
+
+Taking the exponent of the coefficient gives the odds ratio, in this case $e^{2.299} = 9.97$, so that the odds that a customer who had subscribed during a previous marketing campaign doing so in this campaign would be 9.97 times greater than for another customer who had not.  The obvious implication is that the bank should target these customers for sales efforts
+
+Month factor variables showing interesting odds ratios are March at 15.171, September with 7.256, October 7.79 and Dec 6.18.  The implication is that the bank would also benefit from targeting customers at these times in the year.  The retired, students and those with third-level education, with log odds $e^{\beta_i}$ of 1.29, 1.47 and 1.46 respectively may also be more likely to be subscribers.  
+
+To test the fitted model, we estimated some of the pseudo-$R^2$ models that can give some idea of the explanatory power of the model.  The Cox Snell and Nagelkerke $R^2$ were estimated by \textit{R} as 21.687\% and 42.19\%, so indicating some explanatory power for the model.  The Hosmer-Lemeshow statistic returned a probability value of zero, indicating that the fitted model did not show statistically significant differences from the null hypothesis of zero coefficients.   
+
+\subsection{Model Selection}
+
+Adding back the \textit{pdays} variable that we had left out when estimating \textit{glm.all} above and estimating the model with the extra variable (\textit{glm.all2})leads to no improvement.  The coefficient for pdays has a probability value of 14.95\%, far from significant.  Many other variables also come up as insignificant also.  
+
+Null deviance was 8919.8 on 8256  degrees of freedom, residual deviance 5809.6 on 8215 degrees of freedom, much lower than with \textit{glm.all}, as some 36,954 observations deleted due to the NA values in the \textit{pday} field, most of the records in the dataset.  All this points to dropping the \textit{pdays} variable from the model as insignificant.  
+
+\subsubsection{Stepwise model selection}
+
+We continued to set up an automated stepwise model selection for the logistic regression. Defining one model with no explanatory variables, so only the intercept terms, \textit{null\_model} and one with all the variables in glm.all above as \textit{full\_model}, a search in both directions was specified.  
+
+After iterating, a model \textit{glm_step_AIC} dropping the \textit{age} and \textit{default_factor} ends up generating the lowest AIC, of 21,656.36, compared to the 21660 AIC of \textit{glm.all}.  Coefficients are very close for the remaining variables to those on \textit{glm_step_AIC}.  
+
+\subsection{Cross-Validation of the Model}
+\label{subsec:crossval}
+
+James et al.\cite{hastie21}(5.1) strongly recommend cross-validation, the family of methods that split the dataset between a portion used for estimation and a part held back from the training data, to test how the performance of the estimates generalise on data not seen in training.  This is also a standard technique used in evaluating machine learning models like neural networks and decision trees that are tested in the original analysis of the dataset by Moro et al. \cite{moro14}. 
+
+Using the \texttt{R caret} library and documentation \cite{caretdocs}, I ran a k-fold cross-validation with $k=5$, the dataset split randomly (although in my code with a seed =1 to allow replication) 5 times in sequence and running the estimation and testing of our linear regression model \textit{glm.all}.  
+
+ This would likely make us happier to accept the \texttt{glm.all} model as a useful estimator. No method seems to be agreed in the literature for calculating DOF for k-fold cross-validation like this and so no t or F tests can be calculated.  Nevertheless, the process is standard in the machine-learning literature and is \lqPerhaps the current gold standard method to reliably estimate model performance is repeated k-fold CV\rqssdfd.
+\\
+
+\section{Model Performance and Applications}
 
 Odds ratios may be most useful in targeting the customers
 
-\section{Example table} 
+\subsection{Classification in the Imbalanced Dataset}
+\label{sec:imbalance}
 
+\cite{lantz15} \cite{branco17}
+
+
+\section{Example table} 
 \begin{table}[htbp]
 \caption{Reddit Posts: Polarity Percentiles }
 \begin{center}
