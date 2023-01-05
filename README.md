@@ -19,7 +19,7 @@ R code for analysing the air departures time
 __TABA DATAstat.docx__   
 The assignment document, as provided by Hicham
 
-__TABA_Bank_data_logic_regression.ipynb__ 
+__TABA_Bank_data_logic_regression.ipynb__    
 Logistic regression analysis for the bank telesales dataset - A copy of the Colab Jupyter notebook containing the code, descriptions, results and graphs
 
 __TABA_time_series_analysis.ipynb__   
