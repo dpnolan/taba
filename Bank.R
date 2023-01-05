@@ -4,10 +4,21 @@
 # 
 # Bank telemarketing analysis
 #
-#See Google Colab workbook at   
-# https://colab.research.google.com/gist/dpnolan/7bf9b9b342490bfba31fb761510f9c19/tata-time-series-analysis.ipynb?authuser=3#scrollTo=-VpUAwwDymKr
-# 
+#See Google Colab workbook and all the working files at 
+#
 # Github depo https://github.com/dpnolan/taba 
+
+# Contents 
+# B Bank Telesales data analysis 
+# B.1 Load,
+# B.2 Preprocess the data
+# B.3 Descriptive statistics and graphing the variables
+# B.4 Model fitting
+# B.5 Automated Model Selection
+# B.6 Classification
+# B.7 ROC Curve 
+# B.8 Oversampling the yes cases  
+# B.9 Cross-validation
 
 ####################
 # Section 1 - Load data
@@ -33,7 +44,7 @@ bank_clean<-bank
 # I include it in the analysis here
 
 # Convert the categorical variables to factors in R
-job_factor<-factor_clean(bank$job)
+job_factor<-factor(bank$job)
 summary(job_factor)
 bank_clean<-cbind(bank_clean,job_factor)
 
@@ -325,7 +336,6 @@ glm.all<-glm(y_factor ~ age + balance + month_factor + duration + campaign
               data=bank_clean, 
               family = binomial)
 summary(glm.all)
-
 #  Coefficients:
 #  Estimate Std. Error z value Pr(>|z|)    
 #  (Intercept)               -3.560e+00  1.850e-01 -19.246  < 2e-16 ***
@@ -395,7 +405,31 @@ exp(coef(glm.all))
 
 # Diagnosis of the logistic regression
 summary(residuals(glm.all))
-plot(residuals(glm.all))
+plot(glm.all)
+# Save down the Cook's distance diagram that shows outliers are not significant, 
+# although one comes close
+
+library(car)
+
+vif(glm.all)
+#GVIF Df GVIF^(1/(2*Df))
+#age              2.181062  1        1.476842
+#balance          1.042316  1        1.020939
+#month_factor     2.778305 11        1.047543
+#duration         1.123955  1        1.060167
+#campaign         1.082122  1        1.040251
+#job_factor       4.153994 11        1.066871
+#previous         1.272448  1        1.128028
+##marital_factor   1.444198  2        1.096243
+#education_factor 2.256349  3        1.145252
+#housing_factor   1.414825  1        1.189464
+#default_factor   1.016560  1        1.008246
+#loan_factor      1.064586  1        1.031788
+#contact_factor   1.866724  2        1.168880
+#poutcome_factor  1.507077  3        1.070753
+
+# All values < 10, so the variance heteroskedasticity should not be a problem for our model
+
 
 #################
 # Test the fitted model with Pseudo R2 measures
@@ -437,7 +471,6 @@ PseudoR2(glm.all,which='all')
 # BIC=22,017.83
 # log likelihood = -10,789.17
 # null log likelihood = -16,315.48
-
 
 performance_hosmer(glm.reduced, n_bins = 10)
 # Hosmer-Lemeshow Goodness-of-Fit Test
@@ -543,11 +576,12 @@ step_model <- step(null_model,
                    direction = "both")
 
 summary(step_model)
-plot(step_model)
 
-y_factor ~ duration + poutcome_factor + month_factor + contact_factor + 
-  housing_factor + job_factor + campaign + loan_factor + marital_factor + 
-  education_factor + balance + previous
+# step_model with lowest AIC of 21,656 is 
+# -y_factor ~ duration + poutcome_factor + month_factor + contact_factor + 
+#  housing_factor + job_factor + campaign + loan_factor + marital_factor + 
+#  education_factor + balance + previous
+#  i.e. age and default_factor drop out
 
 ####################
 # Section 6 - Classification
@@ -574,7 +608,7 @@ summary(y_factor)
 
 contrasts(y_factor)
 
-glm.probs<-predict(glm.all,type='response')
+glm.probs<-predict(step_model,type='response')
 # Extract probabilities estimated as the dependent variable in the logistic regression
 glm.probs[1:10]
 # Display some probabilities for inspection
@@ -595,7 +629,7 @@ glm.pred[glm.probs > 0.5]= 'yes'
 glm.pred<-factor(glm.pred)
 
 summary(glm.pred)
-# with the 50% threshold, our model predications are
+# with the 50% threshold, our model predictions are
 #  no     yes 
 # 42,389  2,822 
 # Our observations show
@@ -609,11 +643,11 @@ table(glm.pred, y_factor)
 # threshold = 0.5
 #             y_factor
 # glm.pred    no   yes
-# no        38937  3452
-# yes         985  1837
-# TPR = TP / (TP + FN ) = 1837/(1837+3452) 
-# =34.73% sensitivity, very bad
-# TNR = TN / (TN + FP) = 38937 / (38937 + 985) = 97.53%
+# no        38938  3453
+# yes         984  1836
+# TPR = TP / (TP + FN ) = 1836/(1836+3453)
+# =34.71% sensitivity, very bad
+# TNR = TN / (TN + FP) = 38938 / (38938 + 984) = 97.535%
 # = very accurate for the 'no' customers
 # 
 # threshold = 0.117, matching the proportion of 'yes' in the dataset
@@ -640,11 +674,11 @@ summary(y_factor)
 summary(pred_classf)
 sensitivity(pred_classf,y_factor,positive='yes')
 # Sensitivity, the total positive rate, 
-# matches the manual calculation of 34.73% above
+# matches the manual calculation of 34.71% above
 
 specificity(pred_classf,y_factor,negative='no')
 # Specificity, the total negative rate
-# matches the manual calculation of 97.53% above
+# matches the manual calculation of 97.535% above
 
 precision(pred_classf,y_factor,positive='yes')
 recall(pred_classf,y_factor,negative='no')
@@ -675,20 +709,18 @@ table(glm.pred, y_factor)
 # threshold = 0.117, matching the proportion of 'yes' in the dataset
 #             y_factor
 # glm.pred    no   yes
-# no        33597  905
-# yes       6325   4384
-# TPR = TP / (TP + FN ) = 43847/(4384+905) 
+# no        33596  905
+# yes       6326   4384
+# TPR = TP / (TP + FN ) = 4384/(4384+905)
 # =82.9% sensitivity
-# TNR = TN / (TN + FP) = 33597 / (33597 + 6325) 
+# TNR = TN / (TN + FP) = 33596 / (33596 + 6325)
 # = 84.16%
-
 
 pred_classf<-as.factor(glm.pred)
 cm2<-confusionMatrix(y_factor,pred_classf,positive = "yes")
 cm2 
 # Produces the came Confusion Matrix as above
 
-attributes(cm2)
 summary(y_factor)
 summary(pred_classf)
 sensitivity(pred_classf,y_factor,positive='yes')
@@ -697,16 +729,21 @@ sensitivity(pred_classf,y_factor,positive='yes')
 
 specificity(pred_classf,y_factor,negative='no')
 # Specificity, the total negative rate
-# matches the manual calculation of 84.16% above
+# matches the manual calculation of 84.15% above
 
 precision(pred_classf,y_factor,positive='yes')
 recall(pred_classf,y_factor,negative='no')
-
 
 ####################
 # Section 7 - Section ROC curve
 ####################
 # This section follows Lantz (2015), chapter 10
+
+dev.off() # clear the graphics buffer
+
+# run AFTER 
+# 1. Estimating the step_model in section 5
+# 2. Executing the'Classification using the population threshold' above
 
 install.packages('ROCR')
 library(ROCR)
@@ -718,63 +755,15 @@ perf<-performance(pred, measure='tpr',x.measure='fpr')
 
 # Plot the ROC curve  
 plot(perf, main = "ROC curve for logistic regression sales classifier",
-     col = "red", lwd = 3)
+     col = "blue", lwd = 3)
 abline(a = 0, b = 1, lwd = 2, lty = 2)
 perf.auc <- performance(pred, measure = "auc")
 str(perf.auc)
 unlist(perf.auc@y.values)
-# So, calculated AUC is around 90.8%, 
-
-###################################
-# Section 8 - Train/test split
-###################################
-
-# Create train and test datasets
-set.seed(1)
-#use 70% of dataset as training set and 30% as test set
-sample <- sample(c(TRUE, FALSE), size=nrow(bank_clean),replace=TRUE, prob=c(0.7,0.3))
-train  <- bank_clean[sample, ]
-test   <- bank_clean[!sample, ]
-
-glm.train<-glm(y_factor ~ age + balance + month_factor + duration + campaign 
-               + previous + job_factor + marital_factor + education_factor + default_factor 
-               + housing_factor + loan_factor + contact_factor + poutcome_factor, 
-               data=train, 
-               family = binomial)
-
-summary(glm.train)
-
-glm.probs<-predict(glm.train,type='response')
-# Extract probabilities estimated as the dependent variable in the logistic regression
-glm.probs[1:10]
-# Display some probabilities for inspection
-
-length(glm.probs)         
-# Check that there are the correct number of probs, one for each observation input
-
-glm.pred<-rep("no",length(glm.probs))
-# Create the matrix for predictions, populated with 'no' glm.pred
-
-glm.pred[glm.probs > 0.113]= 'yes'
-glm.pred<-factor(glm.pred)
-
-summary(glm.pred)
-# Our observations show
-# no      yes 
-# 24,003  7,652
-
-# Print out the statistics for the confusion matrix
-table(glm.pred, train$y_factor)
-
-#lm.pred    no    yes
-# no     23385   618
-# yes     4576   3076
-
-performance_hosmer(glm.train, n_bins = 10)
-PseudoR2(glm.train,which='all')
+# So, calculated AUC is around 90.8%, a 'good' level of significance
 
 ####################
-# Section 9 - Oversampling the 'yes' cases
+# Section 8 - Oversampling the 'yes' cases
 ###################
 # This is another method for classification in imbalanced data sets 
 # recommended by Branco et al. (2017), namely oversample the under-represented class.  
@@ -825,7 +814,9 @@ table(glm.pred, cases$y_factor)
 # no        33,859  7131
 # yes       6,063   32,791
 
-32791 / (32791+7131)
+# no        33597  905
+# yes       6325   4384
+
 #sensitivity = 82.13767%, compared to 82.9% above 
 # TPR = TP / (TP + FN )
 
@@ -833,103 +824,38 @@ table(glm.pred, cases$y_factor)
 # specificity = 84.8%, compared to 84.16% above
 # TNR = TN / (TN + FP) 
 
-hltest(glm.fits5)
+hltest(glm.oversampled)
 # Statistic =  362017820 
 # degrees of freedom =  9 
 # p-value =  < 2.22e-16 
 # Still not significant for the fitted model overall
 
-performance_hosmer(glm.fits5, n_bins = 10)
+library(performance)
+performance_hosmer(glm.oversampled, n_bins = 10)
 # Chi-squared: 3794.805
 # df:   8    
 # p-value:   0.000
 # Summary: model does not fit well.
 
-
 # Nagelkerke pseudo R2
-NagelkerkeR2(glm.fits5)
+NagelkerkeR2(glm.oversampled)
 # $R2 = 0.5985811
 
-r2_nagelkerke(glm.fits5)
+r2_nagelkerke(glm.oversampled)
 # Nagelkerke's R2 
 # 0.5985811
 
-PseudoR2(glm.fits5,which='CoxSnell') # 44.89%
-PseudoR2(glm.fits5,which='Nagelkerke') # 59.86%
-PseudoR2(glm.fits5,which='all')
+PseudoR2(glm.oversampled,which='CoxSnell') # 44.89%
+PseudoR2(glm.oversampled,which='Nagelkerke') # 59.86%
+PseudoR2(glm.oversampled,which='all')
 # AIC = 63,189.93
 # BIC = 63,570.73
 # log likelihood = -31,553.96
 # null log likelihood = -55,343.64
 
-####################
-# Section 10 Individual variable regressions against y
-###################
-
-glm.single<-glm(y_factor ~ age,
-                data=bank_clean, 
-                family = binomial)
-summary(glm.single)
-#Estimate Std. Error z value Pr(>|z|)    
-#(Intercept) -2.319506   0.058083 -39.934   < 2e-16 ***
-#  age        0.007229   0.001352   5.346    8.98e-08 ***
-
-PseudoR2(glm.single,which='all')
-#Nagelkerke
-#1.214439e-03
-#Cox Snell 
-#6.243408e-04 
-
-performance_hosmer(glm.single, n_bins = 10)
-
-# Hosmer-Lemeshow Goodness-of-Fit Test
-#
-# Chi-squared: 614.722
-# df:   8    
-# p-value:   0.000
-# Summary: model does not fit well.
-
-
-glm.single<-glm(y_factor ~ job_factor,
-                data=bank_clean, 
-                family = binomial)
-summary(glm.single)
-#Estimate Std. Error z value Pr(>|z|)    
-#(Intercept) -2.319506   0.058083 -39.934   < 2e-16 ***
-#  age        0.007229   0.001352   5.346    8.98e-08 ***
-
-PseudoR2(glm.single,which='all')
-#Nagelkerke
-#3.188e-02
-#Cox Snell 
-#1.639e-02 
-
-performance_hosmer(glm.single, n_bins = 10)
-# 'breaks' are not unique
-
-glm.single<-glm(y_factor ~ marital_factor,
-                data=bank_clean, 
-                family = binomial)
-summary(glm.single)
-performance_hosmer(glm.single, n_bins = 10)
-
-install.packages('rms')
-library(rms)
-model_lrm<-lrm(y_factor~job_factor,bank_clean, method='lrm.fit', model = TRUE, x=TRUE, y=TRUE,
-               linear.predictors=TRUE, se.fit=FALSE)
-
-model_lrm_all<-lrm(y_factor~age + balance + month_factor + duration + campaign 
-               + previous + job_factor + marital_factor + education_factor + default_factor 
-               + housing_factor + loan_factor + contact_factor + poutcome_factor,
-               bank_clean, method='lrm.fit', model = TRUE, x=TRUE, y=TRUE,
-               linear.predictors=TRUE, se.fit=FALSE)
-
-model_lrm_all
-
-# Pr(> chi2)  <0.0001 
 
 #################
-# Section 11 - cross validation
+# Section 9 - cross validation
 #################
 
 library(caret)
@@ -944,15 +870,15 @@ set.seed(1)
 ctrl <- trainControl(method = "cv", number = 5)
 
 #fit a logistic regression model and use k-fold CV to evaluate performance
-model <- train(y_factor~ age + balance + month_factor + duration + campaign 
-               + previous + job_factor + marital_factor + education_factor + default_factor 
-               + housing_factor + loan_factor + contact_factor + poutcome_factor,
-               data=bank_clean,
-               method='glm',
-               family='binomial',
-               trControl = ctrl)
-print(model)  
-model$results 
+cv.full <- train(y_factor~ age + balance + month_factor + duration + campaign 
+                 + previous + job_factor + marital_factor + education_factor + default_factor 
+                 + housing_factor + loan_factor + contact_factor + poutcome_factor,
+                 data=bank_clean,
+                 method='glm',
+                 family='binomial',
+                 trControl = ctrl)
+print(cv.full)  
+summary(cv.full)
 
 # Null deviance: 32631  on 45210  degrees of freedom
 # Residual deviance: 21578  on 45170  degrees of freedom
@@ -961,7 +887,25 @@ model$results
 # Coefficients on the k-fold results exactly match the sign and size on the the glm.all model above, 
 # thus validating the estimates for glm.all
 # This would likely make us happier to accept the glm.all model as a useful estimator
-# 
+# Accuracy = 0.9017273 and Kappa = 0.4036007 are reported also.  
+
 # Note, however, that there is no agreement and implementation on a method to estimate 
 # degrees of freedom and t and F tests for cross validation estimates
 # This method belongs more to the world of machine learning
+
+# Redo the fit and k-fold CV with the reduced model from the step-wise analysis that drops
+# age and default_factor
+cv.step <- train(y_factor~ balance + month_factor + duration + campaign 
+                 + previous + job_factor + marital_factor + education_factor
+                 + housing_factor + loan_factor + contact_factor + poutcome_factor,
+                 data=bank_clean,
+                 method='glm',
+                 family='binomial',
+                 trControl = ctrl)
+print(cv.step)
+
+# Null deviance: 32631  on 45210  degrees of freedom
+# Residual deviance: 21578  on 45172  degrees of freedom
+# AIC: 21656
+# Coefficients show only minor differences to glm.all 
+

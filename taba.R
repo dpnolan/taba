@@ -2,15 +2,26 @@
 # 
 # Code for Terminal Assessment by Assignment (TABA)
 # 
-# See Google Colab workbook at   
-# 
-# https://colab.research.google.com/gist/dpnolan/7bf9b9b342490bfba31fb761510f9c19/tata-time-series-analysis.ipynb?authuser=3#scrollTo=-VpUAwwDymKr
+# See Google Colab workbook and all the working files at 
 # 
 # Github https://github.com/dpnolan/taba 
+#
+# Contents 
+# A Time Series Analysis 
+# A.1 Load, preprocess and describe the data
+# A.2 Use ETS to automatically fit and evaluate an exponential smoothing model
+# A.2.2 Estimation
+# A.2.3 Diagnosis 
+# A2.4 Forecasts
+#
+# A3 - SARIMA analysis 
+# A.3.1 Estimate the orders of integration
+# A 3.2 Model estimation
+# A.3.3 Forecasts
 
-Contents 
-A Time Series Analysis 
-A.1 Load, preprocess and describe the data
+# A 4 - Simple time series models
+# A 4.1 - Simple time series models
+# A 4.2 - Simple decomposition
 
 ####################
 # Section A.1 - Load, preprocess and describe the data
@@ -147,7 +158,6 @@ t.test(d2020,d2022,alternative='two.sided',var.equal=FALSE)['p.value']
 # p.value=6.286207e-08, so REJECT null hypothesis of equal means
 
 # Some plots of sub-periods of our time series
-
 plot(d2020, main = 'Departures 2020')
 plot(d2021, main = 'Departures 2021')
 plot(d2022, main = 'Departures 2022')
@@ -243,7 +253,7 @@ departs_fit2<-ets(ts_departs_train,model="AAA",use.initial.values = TRUE)
 departs_fit2
 summary(departs_fit2) 
 
-# shows parameters and initial states are the same 
+  # shows parameters and initial states are the same 
 
 # AIC       AICc      BIC 
 # 1897.832 1903.886   1949.723 
@@ -319,6 +329,14 @@ autoplot(ts_departs)+
 # A2.4 Forecasts
 ####################
 
+ts_departs_test
+#       Jan   Feb   Mar   Apr   May   Jun
+# 2021 104.1  46.7  57.5  61.5  82.4 174.7
+
+
+mean(ts_departs_test) # mean = 87.81667
+sd(ts_departs_test) # sd = 47.21324
+
 forecast(departs_fit1,h=6) # 
 #             Point Forecast     Lo 80     Hi 80      Lo 95     Hi 95
 #Jan 2021       120.1400 -17.96313  258.2432  -91.07053  331.3506
@@ -327,16 +345,14 @@ forecast(departs_fit1,h=6) #
 #Mar 2021       276.7834  11.60873  541.9580 -128.76624  682.3329
 #May 2021       515.7952 147.98794  883.6024  -46.71744 1078.3078
 #Jun 2021       683.4642 269.21589 1097.7125   49.92609 1317.0023
+
 accuracy(departs_fit1,h=6)
 #                   ME     RMSE     MAE       MPE     MAPE      MASE      ACF1
 # Training set -2.425368 100.5841 52.8242 -30.07175 41.14341 0.2738436 0.2759947
 
-mean(ts_departs_test) # mean = 87.81667
-sd(ts_departs_test) # sd = 47.21324
-
 # actual minus forecast
-ts_departs_test-forecast(departs_fit1,h=6)$mean
-# Jan        Feb        Mar        Apr        May        Jun
+ts_departs_test-forecast(departs_fit1,h=6)$mean # y - y^hat
+#           Jan        Feb        Mar        Apr        May        Jun
 # 2021  -16.04004  -81.01654 -219.28335 -305.41467 -433.39517 -508.76419
 
 mean(ts_departs_test-forecast(departs_fit1,h=6)$mean) 
@@ -423,14 +439,14 @@ p2<-ggplot(diff_ts_departs_train, aes(x=as.yearmon(index(diff_ts_departs_train))
 p1 / p2 # Graph ts_departs_train dataset and its first differences, one on top of the other
 
 # KPSS, ADF and PP tests show that the first differences series has integration order zero
-ndiffs(ts_departs_train,test='kpss')
-ndiffs(diff_ts_departs_train,test='kpss')
+ndiffs(ts_departs_train,test='kpss') #1 
+ndiffs(diff_ts_departs_train,test='kpss') #0
 
-ndiffs(ts_departs_train,test='adf')
-ndiffs(diff_ts_departs_train,test='adf')
+ndiffs(ts_departs_train,test='adf') #0
+ndiffs(diff_ts_departs_train,test='adf') #0
 
-ndiffs(ts_departs_train,test='pp')
-ndiffs(diff_ts_departs_train,test='pp')
+ndiffs(ts_departs_train,test='pp') #1
+ndiffs(diff_ts_departs_train,test='pp') #0
 
 # Graph the Autocorrelation and Partial Autocorrelation Functions (PACF)
 Acf(ts_departs_train)
@@ -490,10 +506,8 @@ summary(sa5)
 # AIC=1899.88   AICc=1900.04   BIC=1908.95
 # Much, much worse than SAX 
 
-
 # Plot the residuals from the automatically derived model, sax
 # AR, MA unlikely, nothing is significant in ACF 
-
 residuals(sax)
 checkresiduals(sax,plot=TRUE)
 # Result is that null hypothesis of independence is upheld
@@ -536,6 +550,13 @@ Box.test(x = residuals(sax),type='Ljung-Box',lag=14)# p = 0.9962
 # as we continue to recover from the pandemic's economic effects
 # 95% confidence interval goes from 439 to 2363, a very wide range for uncertainty.  
 
+ts_departs_test
+#       Jan   Feb   Mar   Apr   May   Jun
+# 2021 104.1  46.7  57.5  61.5  82.4 174.7
+
+mean(ts_departs_test) # 87.81
+sd(ts_departs_test) # 47.21
+
 forecast(sax,h=6)
 # show the values
 # Negative values aren't valid 
@@ -550,8 +571,8 @@ forecast(sax,h=6)
 
 # Forecast errors 
 ts_departs_test - forecast(sax,h=6)$mean
-            Jan          Feb          Mar          Apr          May          Jun
-2021   -0.3510287  -47.7200719 -111.1626605 -120.4991608 -230.3666766 -291.9768292
+#            Jan          Feb          Mar          Apr          May          Jun
+# 2021   -0.3510287  -47.7200719 -111.1626605 -120.4991608 -230.3666766 -291.9768292
 
 # Mean forecast error
 mean(ts_departs_test - forecast(sax,h=6)$mean) # =-133.6794
@@ -573,83 +594,7 @@ accuracy(sax,h=6)
 ####################
 
 ####################
-# Section 4.1 - Simple decomposition
-####################
-
-#dev.off()
-#par(mfrow = c(2, 1))
-par(mfrow = c(1, 1))
-
-fit1.decadd<-decompose(ts_departs_train,type='additive')
-fit1.decadd
-plot(fit1.decadd)
-
-fit2.decmult<-decompose(ts_departs_train,type='multiplicative')
-fit2.decmult
-plot(fit2.decmult)
-
-# Additive seems more likely,as the variance looks like it remains constant 
-# through the training data history
-# Both random terms fail normal 
-
-classic_add<-decompose(ts_departs_train,type='additive')
-pclass<-autoplot(classic_add)+xlab('Year')
-clean_classic_add<-na.omit(classic_add$random)
-
-jarque.bera.test(clean_classic_add)
-# rejects normality of residuals
-Box.test(x = clean_classic_add)
-#rejects null hypothesis of independence in the residual term
-
-classic_multi<-decompose(ts_departs_train,type='multiplicative')
-pmult<-autoplot(classic_multi)+xlab('Year')
-clean_classic_multi<-na.omit(classic_multi$random)
-jarque.bera.test(clean_classic_multi)
-
-# rejects normality of residualsBox.test(x = clean_classic_add)
-#rejects null hypothesis of independence in the residual term
-# Likely unexplained variation not captured by the decomp model here, 
-# so we should look at other models instead
-
-forecast(clean_classic_add,h=12)
-#         Point Forecast     Lo 80     Hi 80      Lo 95       Hi 95
-#Jul 2020      -571.6223 -685.3097 -457.9350  -745.4921 -397.752543
-#Sep 2020      -571.6223 -768.5214 -374.7232  -872.7535 -270.491114
-#Aug 2020      -571.6223 -732.3925 -410.8522  -817.4990 -325.745620
-#Oct 2020      -571.6223 -798.9799 -344.2647  -919.3358 -223.908853
-#Dec 2020      -571.6223 -850.0751 -293.1696  -997.4791 -145.765585
-#Nov 2020      -571.6223 -825.8146 -317.4300  -960.3759 -182.868790
-#Jan 2021      -571.6223 -872.3850 -270.8597 -1031.5991 -111.645569
-#Mar 2021      -571.6223 -912.6540 -230.5906 -1093.1853  -50.059366
-#Feb 2021      -571.6223 -893.1505 -250.0941 -1063.3573  -79.887368
-#Apr 2021      -571.6223 -931.1009 -212.1438 -1121.3973  -21.847305
-#May 2021      -571.6223 -948.6463 -194.5984 -1148.2307    4.986055
-#Jun 2021      -571.6223 -965.4107 -177.8339 -1173.8697   30.625030
-
-accuracy(forecast(clean_classic_add,h=12))
-#                   ME     RMSE      MAE      MPE     MAPE     MASE      ACF1
-# Training set -4.829311 87.96834 47.04839 118.2794 214.8454 0.781896 0.2756949
-
-plot(forecast(clean_classic_add,h=12))
-
-ts_departs_test
-# Jan   Feb   Mar   Apr   May   Jun
-# 2021 104.1  46.7  57.5  61.5  82.4 174.7
-
-# Forecast error = (y - yhat)
-ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)
-#       Jan      Feb      Mar      Apr      May      Jun
-#2021 675.7223 618.3223 629.1223 633.1223 654.0223 746.3223
-
-# mean of forecast error
-mean(ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)) # 659.44
-# This is the biggest error by far among methods so far
-# Std dev of forecast error
-sd(ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)) # 47.21324
-
-
-####################
-# Section 4 - Simple time series models
+# Section 4.1 - Simple time series models
 ####################
 # Following Hyndman and Athanasopoulos (2018), chapter 6.2
 # Fit and forecast on the training data using the Mean, Naive, Seasonal naive, Drift methods
@@ -711,39 +656,6 @@ accuracy(meanf(ts_departs_train,h=6))
 
 ####################
 # Testing naive()
-
-naive(ts_departs_train,h=6)
-#         Point Forecast      Lo 80    Hi 80     Lo 95    Hi 95
-#Jan 2021          156.1  -48.34283 360.5428 -156.5683 468.7683
-#Mar 2021          156.1 -198.00537 510.2054 -385.4574 697.6574
-#Feb 2021          156.1 -133.02583 445.2258 -286.0798 598.2798
-#Apr 2021          156.1 -252.78566 564.9857 -469.2367 781.4367
-#May 2021          156.1 -301.04807 613.2481 -543.0476 855.2476
-#Jun 2021          156.1 -344.68062 656.8806 -609.7779 921.9779
-
-ts_departs_test 
-#     Jan   Feb   Mar   Apr   May   Jun
-#2021 104.1  46.7  57.5  61.5  82.4 174.7
-
-#Forecast errors 
-ts_departs_test - (naive(ts_departs_train,h=6)$mean) 
-#         Jan        Feb        Mar        Apr        May        Jun
-# 2021    -52.0     -109.4      -98.6     -94.6       -73.7     18.6
-
-#mean of forecast error 
-mean(ts_departs_test - (naive(ts_departs_train,h=6)$mean) ) # = -68.28333
-# std dev of forecast error
-sd(ts_departs_test - (naive(ts_departs_train,h=6)$mean) ) # 47.21324
-
-sd(naive(ts_departs_train,h=6)$mean) # = 0 
-
-accuracy(naive(ts_departs_train,h=6))
-#                 ME     RMSE      MAE       MPE    MAPE      MASE      ACF1
-#Training set -4.399237 159.5276 121.7656 -34.04558 46.6151 0.6312399 0.4252624
-
-# Forecast errors quite small, but only in H1 2021, so low bias, low variance  
-# Out of sample performance of depart = 156 estimate will be terrible during recovery in 2021 and 2022
-# No seasonality and no trend, which are likely to be important as conditions return to normal.  
 
 ####################
 # Testing Seasonal naive
@@ -819,33 +731,77 @@ accuracy(rwf(ts_departs_train,drift=TRUE,h=6))
 
 
 ####################
-# Work in progress
+# Section 4.2 - Simple decomposition
 ####################
 
-library(ggplot2)
-adf.test(ts_departs,alternative='stationary',k=0)
-# k = 0, p = 0.5597
-# k=1,2,3,4,5,6
-# k=2, p=0.01
-# k=1, p=0.03934
-# k=3, p=0.02942
-# k=4, p-0.3421
-# k=5, p=0.4725
+#dev.off()
+#par(mfrow = c(2, 1))
+par(mfrow = c(1, 1))
 
-attributes(ts_departs)
+fit1.decadd<-decompose(ts_departs_train,type='additive')
+fit1.decadd
+plot(fit1.decadd)
 
-m <- lm(coredata(ts) ~ index(ts))
-lm(departs~departs.index())
-departs(Month)
+fit2.decmult<-decompose(ts_departs_train,type='multiplicative')
+fit2.decmult
+plot(fit2.decmult)
 
-#library('zoo')
-#typeof(departs$Month[153])
-#index(as.zoo(ts_departs))[153]
-#yearmon(index((as.zoo(ts_departs))))
+# Additive seems more likely,as the variance looks like it remains constant 
+# through the training data history
+# Both random terms fail normal 
 
+classic_add<-decompose(ts_departs_train,type='additive')
+pclass<-autoplot(classic_add)+xlab('Year')
+clean_classic_add<-na.omit(classic_add$random)
 
-Augmented Dickey-Fuller Test
-=data:  ts_departs
-Dickey-Fuller = -1.9273, Lag order = 6, p-value = 0.6067
-alternative hypothesis: stationary
+jarque.bera.test(clean_classic_add)
+# rejects normality of residuals
+Box.test(x = clean_classic_add)
+#rejects null hypothesis of independence in the residual term
+
+classic_multi<-decompose(ts_departs_train,type='multiplicative')
+pmult<-autoplot(classic_multi)+xlab('Year')
+clean_classic_multi<-na.omit(classic_multi$random)
+jarque.bera.test(clean_classic_multi)
+
+# rejects normality of residualsBox.test(x = clean_classic_add)
+#rejects null hypothesis of independence in the residual term
+# Likely unexplained variation not captured by the decomp model here, 
+# so we should look at other models instead
+
+forecast(clean_classic_add,h=12)
+#         Point Forecast     Lo 80     Hi 80      Lo 95       Hi 95
+#Jul 2020      -571.6223 -685.3097 -457.9350  -745.4921 -397.752543
+#Sep 2020      -571.6223 -768.5214 -374.7232  -872.7535 -270.491114
+#Aug 2020      -571.6223 -732.3925 -410.8522  -817.4990 -325.745620
+#Oct 2020      -571.6223 -798.9799 -344.2647  -919.3358 -223.908853
+#Dec 2020      -571.6223 -850.0751 -293.1696  -997.4791 -145.765585
+#Nov 2020      -571.6223 -825.8146 -317.4300  -960.3759 -182.868790
+#Jan 2021      -571.6223 -872.3850 -270.8597 -1031.5991 -111.645569
+#Mar 2021      -571.6223 -912.6540 -230.5906 -1093.1853  -50.059366
+#Feb 2021      -571.6223 -893.1505 -250.0941 -1063.3573  -79.887368
+#Apr 2021      -571.6223 -931.1009 -212.1438 -1121.3973  -21.847305
+#May 2021      -571.6223 -948.6463 -194.5984 -1148.2307    4.986055
+#Jun 2021      -571.6223 -965.4107 -177.8339 -1173.8697   30.625030
+
+accuracy(forecast(clean_classic_add,h=12))
+#                   ME     RMSE      MAE      MPE     MAPE     MASE      ACF1
+# Training set -4.829311 87.96834 47.04839 118.2794 214.8454 0.781896 0.2756949
+
+plot(forecast(clean_classic_add,h=12))
+
+ts_departs_test
+# Jan   Feb   Mar   Apr   May   Jun
+# 2021 104.1  46.7  57.5  61.5  82.4 174.7
+
+# Forecast error = (y - yhat)
+ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)
+#       Jan      Feb      Mar      Apr      May      Jun
+#2021 675.7223 618.3223 629.1223 633.1223 654.0223 746.3223
+
+# mean of forecast error
+mean(ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)) # 659.44
+# This is the biggest error by far among methods so far
+# Std dev of forecast error
+sd(ts_departs_test - c(-571.6223,-571.6223,-571.6223,-571.6223,-571.6223,-571.6223)) # 47.21324
 
